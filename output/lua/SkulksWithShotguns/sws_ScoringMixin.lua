@@ -1,4 +1,3 @@
-
 local function PlaySound( self, soundEffect )
     Server.PlayPrivateSound(self, soundEffect, self, 1.0, Vector(0, 0, 0), true)
 end
@@ -22,7 +21,7 @@ function ScoringMixin:rewardKill()
             PlaySound(self, kSfxKillstreak3)
         end
         if self.killstreak == 8 then 
-            self:GiveUpgrade(kTechId.Caparace) 
+            self:GiveUpgrade(kTechId.Carapace) 
             Shared:ShotgunMessage("MONSTERKILL!! " .. self:GetName() .. " gained carapace!") 
             PlaySound(self, kSfxKillstreak4)
         end
@@ -43,3 +42,4 @@ function RewardOnFireEffect(self)
    self:SetOnFire()
    Shared:ShotgunMessage(self:GetName() .. " is on fire! (temporary Weapons III)")
 end
+

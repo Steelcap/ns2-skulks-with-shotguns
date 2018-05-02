@@ -661,6 +661,10 @@ function Skulk:OnProcessMove(input)
 
 end
 
+function Exo:OnInitLocalClient()
+    Player.OnInitLocalClient(self)
+end
+
 function Skulk:GetIsSmallTarget()
     return true
 end

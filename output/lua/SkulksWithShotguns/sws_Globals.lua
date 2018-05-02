@@ -8,6 +8,7 @@ kSpawnUmbraDuration = 1.25
 kTeam1Name = "Blue"
 kTeam2Name = "Red"
 
+
 kShadowTeamIndex = kTeam1Index
 kVanillaTeamIndex = kTeam2Index
 
@@ -30,6 +31,7 @@ kFlagFloorTimeout = 45
 
 // SWS team mode.
 kTeamModeEnabled = false
+kTeamModeTimelimit = (10 * 60)
 
 // Tweak egg spawns.
 kAlienEggsPerHive = 5

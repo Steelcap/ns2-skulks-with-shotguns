@@ -21,8 +21,11 @@ end
 
 ScoringMixin.networkVars =
 {
-    playerLevel = "private integer",
-    playerSkill = "private integer",
+    playerSkill = "integer",
+    playTime = "private time",
+    playerLevel = "integer",
+    totalXP = "integer",
+    teamAtEntrance = string.format("integer (-1 to %d)", kSpectatorIndex)
 }
 
 function ScoringMixin:__initmixin()
@@ -32,6 +35,18 @@ function ScoringMixin:__initmixin()
     self.continuousScores = { }
     
     self.serverJoinTime = Shared.GetTime()
+    
+    self.playerLevel = -1
+    self.totalXP = -1
+    self.playerSkill = -1
+    
+    self.weightedEntranceTimes = {}
+    self.weightedEntranceTimes[kTeam1Index] = {}
+    self.weightedEntranceTimes[kTeam2Index] = {}
+    
+    self.weightedExitTimes = {}
+    self.weightedExitTimes[kTeam1Index] = {}
+    self.weightedExitTimes[kTeam2Index] = {}
     
 end
 
@@ -44,8 +59,8 @@ function ScoringMixin:AddScore(points, res, wasKill)
     // Should only be called on the Server.
     if Server then
     
-        // Tell client to display cool effect.
-        if points ~= nil and points ~= 0 then
+        -- Tell client to display cool effect.
+        if points and points ~= 0 and not GetGameInfoEntity():GetWarmUpActive() then
         
             local displayRes = ConditionalValue(type(res) == "number", res, 0)
             Server.SendNetworkMessage(Server.GetOwner(self), "ScoreUpdate", { points = points, res = displayRes, wasKill = wasKill == true }, true)
@@ -71,6 +86,10 @@ function ScoringMixin:GetPlayerLevel()
     return self.playerLevel
 end
   
+function ScoringMixin:GetTotalXP()
+    return self.totalXP
+end
+
 function ScoringMixin:GetPlayerSkill()
     return self.playerSkill
 end
@@ -89,10 +108,12 @@ if Server then
         self.commanderTime = player.commanderTime or 0
         self.marineTime = player.marineTime or 0
         self.alienTime = player.alienTime or 0
-        self.entranceTime = player.entranceTime
-        self.exitTime = player.exitTime
+        
+        self.weightedEntranceTimes = player.weightedEntranceTimes
+        self.weightedExitTimes = player.weightedExitTimes
 		
 		self.teamAtEntrance = player.teamAtEntrance
+        
         self.totalKills = player.totalKills
         self.totalAssists = player.totalAssists
         self.totalDeaths = player.totalDeaths
@@ -100,6 +121,7 @@ if Server then
         self.totalScore = player.totalScore
         self.totalPlayTime = player.totalPlayTime
         self.playerLevel = player.playerLevel
+        self.totalXP = player.totalXP
         
     end
 
@@ -107,9 +129,7 @@ if Server then
         self.scoreGainedCurrentLife = 0
     end
     
-    function ScoringMixin:GetPlayTime()
-        return self.playTime
-    end
+
     
     function ScoringMixin:GetMarinePlayTime()
         return self.marineTime
@@ -120,7 +140,7 @@ if Server then
     end
     
     function ScoringMixin:GetCommanderTime()
-        return self.commanderTime
+        return self.commanderTime or 0
     end
     
     local function SharedUpdate(self, deltaTime)
@@ -166,9 +186,18 @@ if Server then
     end
     
     function ScoringMixin:OnUpdate(deltaTime)
+        PROFILE("ScoringMixin:OnUpdate")
         SharedUpdate(self, deltaTime)
     end
 
+end
+
+function ScoringMixin:GetPlayTime()
+    return self.playTime
+end
+
+function ScoringMixin:GetLastTeam()
+    return self.teamAtEntrance
 end
 
 function ScoringMixin:AddKill()
@@ -233,29 +262,61 @@ function ScoringMixin:AddDeaths()
     
 end
 
-function ScoringMixin:SetEntranceTime()
-	local teamNumber = self:GetTeamNumber()
+function ScoringMixin:GetRelativeRoundTime()
+    return math.max( 0, Shared.GetTime() - GetGameInfoEntity():GetStartTime() ) --done to prevent float underflow
+end
 	
-	if teamNumber ~= self.teamAtEntrance then
-		self.entranceTime = Shared.GetTime()
+function ScoringMixin:SetEntranceTime( teamNumber )
+    if teamNumber ~= nil and ( teamNumber == kTeam1Index or teamNumber == kTeam2Index ) then
 		self.teamAtEntrance = teamNumber
+        table.insert( self.weightedEntranceTimes[teamNumber], self:GetRelativeRoundTime() )
 	end
 end
 
-function ScoringMixin:GetEntranceTime()
-    return self.entranceTime
+function ScoringMixin:SetExitTime( teamNumber )    
+    if teamNumber ~= nil and ( teamNumber == kTeam1Index or teamNumber == kTeam2Index ) then
+        table.insert( self.weightedExitTimes[teamNumber], self:GetRelativeRoundTime() )
+    end
 end
 
-function ScoringMixin:SetExitTime()
-    self.exitTime = Shared.GetTime()
+function ScoringMixin:GetWeightedPlayTime( forTeamIdx, roundTimeWeighted )
+    
+    if forTeamIdx ~= kTeam1Index and forTeamIdx ~= kTeam2Index then
+        return 0
 end
 
-function ScoringMixin:GetExitTime()
-    if not self.exitTime or self.entranceTime > self.exitTime then 
-        return
+    local weightedTime = 0
+    local aT = math.pow( 2, 1 / 600 )
+    
+    --Since time-spent on teams doesn't exceed allotted gameTime, additive is used
+    if self.weightedEntranceTimes[forTeamIdx] and #self.weightedEntranceTimes[forTeamIdx] > 0 then
+        
+        local entrance, exit
+        local te, tx = 1, 1
+        repeat
+            -- get entrance
+            repeat 
+                entrance, te = self.weightedEntranceTimes[forTeamIdx][te], te + 1
+            until not entrance or not exit or entrance > exit -- Ensure non-paired times are skipped.
+            
+            -- get corresponding exit
+            if entrance then
+                repeat 
+                    exit, tx = self.weightedExitTimes[forTeamIdx][tx], tx + 1
+                until not exit or exit > entrance -- Ensure non-paired times are skipped.
+               
+                if exit then
+                    local weight = ( math.pow( aT, (entrance * -1) ) - math.pow( aT, (exit * -1) ) )
+                    weightedTime = weightedTime + ( math.pow( aT, (entrance * -1) ) - math.pow( aT, (exit * -1) ) )
+    end
+            end
+            
+        until not entrance or not exit
+        
     end
     
-    return self.exitTime
+    return weightedTime / roundTimeWeighted
+    
 end
 
 function ScoringMixin:ResetScores()
@@ -271,9 +332,19 @@ function ScoringMixin:ResetScores()
     self.marineTime = 0
     self.alienTime = 0
 
-    self.entranceTime = Shared.GetTime()
-    self.exitTime = nil
+    self.weightedEntranceTimes = {}
+    self.weightedEntranceTimes[kTeam1Index] = {}
+    self.weightedEntranceTimes[kTeam2Index] = {}
     
+    local teamNum = self:GetTeamNumber()
+    if teamNum ~= nil and teamNum == kTeam1Index or teamNum == kTeam2Index then
+        table.insert( self.weightedEntranceTimes[teamNum], self:GetRelativeRoundTime() )
+end
+
+    self.weightedExitTimes = {}
+    self.weightedExitTimes[kTeam1Index] = {}
+    self.weightedExitTimes[kTeam2Index] = {}
+
 end
 
 // Only award the pointsGivenOnScore once the amountNeededToScore are added into the score
@@ -327,5 +398,8 @@ if Server then
         self.playerLevel = math.round(playerLevel)
     end 
 
+    function ScoringMixin:SetTotalXP(playerLevel)
+        self.totalXP = math.round(playerLevel)
+    end 
 end
 

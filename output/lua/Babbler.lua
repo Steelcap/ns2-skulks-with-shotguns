@@ -56,11 +56,11 @@ local networkVars =
     silenced = "boolean",
     // updates every 10 and [] means no compression used (not updates are send in this case)
     m_angles = "interpolated angles (by 10 [], by 10 [], by 10 [])",
-//    m_origin = "compensated interpolated position (by 0.05 [2 3 5], by 0.05 [2 3 5], by 0.05 [2 3 5])",
+    m_origin = "compensated interpolated position (by 0.05 [2 3 5], by 0.05 [2 3 5], by 0.05 [2 3 5])",
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
-//AddMixinNetworkVars(ClientModelMixin, networkVars)
+AddMixinNetworkVars(ClientModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 
@@ -86,11 +86,12 @@ function Babbler:OnCreate()
     ScriptActor.OnCreate(self)
 
     InitMixin(self, BaseModelMixin)
-    //InitMixin(self, ClientModelMixin)
+    InitMixin(self, ClientModelMixin)
     
     InitMixin(self, LiveMixin)
     InitMixin(self, TeamMixin)
     InitMixin(self, DamageMixin)
+    InitMixin(self, EntityChangeMixin)
     
     if Server then
     
@@ -100,7 +101,6 @@ function Babbler:OnCreate()
         self.jumpAttempts = 0
         self.silenced = false
         
-        InitMixin(self, EntityChangeMixin)
         InitMixin(self, PathingMixin)
         
         self.targetId = Entity.invalidId

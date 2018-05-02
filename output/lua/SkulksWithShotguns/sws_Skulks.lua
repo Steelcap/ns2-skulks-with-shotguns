@@ -1,6 +1,7 @@
 -- @TODO currently disabled due to jerkyness while playing with this class.
 
 -- SWS START Remove this after we re-enable ShotgunSkulks
+
 function Skulk:InitWeapons()
 
     Alien.InitWeapons(self)
@@ -40,6 +41,7 @@ end
 Script.Load("lua/Skulk.lua")
 Script.Load("lua/SkulksWithShotguns/sws_FlagbearerMixin.lua")
 Script.Load("lua/SkulksWithShotguns/sws_EventMessageMixin.lua")
+Script.Load("lua/Weapons/Alien/ReadyRoomLeap.lua")
 
 class 'ShotgunSkulk' (Skulk)
 

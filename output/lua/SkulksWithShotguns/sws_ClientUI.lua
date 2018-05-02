@@ -4,12 +4,13 @@ local kShowAsClass = GetLocalFunction(RemoveScripts, 'kShowAsClass')
 local kShowOnTeam = GetLocalFunction(RemoveScripts, 'kShowOnTeam')
 
 // information not needed for our gamemode.
-kShowAsClass["Alien"].GUIBioMassDisplay = false
+--kShowAsClass["Alien"].GUIBioMassDisplay = false
 kShowAsClass["Alien"].GUIUpgradeChamberDisplay = false
 
 //kShowAsClass["Alien"]["GUISpeedometer"] = true
 kShowAsClass["Alien"]["GUIFlagScore"] = true
 kShowAsClass["AlienSpectator"]["GUIFlagScore"] = true
+kShowAsClass["Alien"]["GUIHiveStatus"] = false
 
 kShowOnTeam[kTeam1Index]["GUIAlienSpectatorHUD"] = true
 kShowOnTeam[kTeam2Index]["GUIAlienSpectatorHUD"] = true

@@ -24,7 +24,8 @@ if Server then
         // List stores all the structures owned by builder player types such as the Gorge.
         // This list stores them based on the player platform ID in order to maintain structure
         // counts even if a player leaves and rejoins a server.
-        self.clientOwnedStructures = { }
+		self.clientOwnedStructures = { }
+		self.clientStructuresOwner = { }
         self.lastAutoHealIndex = 1
         
         self.updateAlienArmorInTicks = nil
@@ -225,8 +226,8 @@ end
     end
     
     // randomized egg spawning, instead of desired / proximate to death like vanilla.
-    local function CustomAssignPlayerToEgg(self, player, enemyTeamPosition)
-        
+    //local function CustomAssignPlayerToEgg(self, player, enemyTeamPosition)
+    function AlienTeam:AssignPlayerToEgg(player, enemyTeamPosition)   
         local team = player:GetTeam()
         if team ~= nil then
             if (team:GetTeamResources() <= 0) and not kTeamModeEnabled then
@@ -266,17 +267,31 @@ end
             self:ResetRespawnFlag()
         end
     end
+	
+	function AlienTeam:UpdateEggGeneration() 
+    
+        // restore missing flag.
+        shouldCheckForFlag = (self.timeLastFlagCheck or 0) + 1 < Shared.GetTime()
+        if shouldCheckForFlag and not self:FlagExists() then
+            self.timeLastFlagCheck = Shared.GetTime()
+            self:ResetRespawnFlag()
+        end
+    end
 
     local function CustomUpdateEggCount(self)
         // team resources count as eggs.
         self.eggCount = self:GetTeamResources()
     end
-
+	
+	function AlienTeam:CustomUpdateEggCount()
+        // team resources count as eggs.
+        self.eggCount = self:GetTeamResources()
+    end
     // we need to do this to replace egg spawning logic. 
-    local updateAlienSpectators = GetLocalFunction(AlienTeam.Update, 'UpdateAlienSpectators')
-    ReplaceLocals( updateAlienSpectators, {  AssignPlayerToEgg = CustomAssignPlayerToEgg } )
+    //local updateAlienSpectators = GetLocalFunction(AlienTeam.Update, 'UpdateAlienSpectators')
+    //ReplaceLocals( updateAlienSpectators, {  AssignPlayerToEgg = CustomAssignPlayerToEgg } )
 
     // replace egg spawning and counting logic.            
-    ReplaceLocals( AlienTeam.Update, { UpdateEggGeneration = ExtendedAlienTeamUpdateMethod, UpdateEggCount = CustomUpdateEggCount } )
+    //ReplaceLocals( AlienTeam.Update, { UpdateEggGeneration = ExtendedAlienTeamUpdateMethod, UpdateEggCount = CustomUpdateEggCount } )
 
 end

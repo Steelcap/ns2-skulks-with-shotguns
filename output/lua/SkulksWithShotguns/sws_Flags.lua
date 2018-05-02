@@ -271,6 +271,22 @@ end
         return self.lastTimeYelled
     end
 
+    function Flag:OnAdjustModelCoords(coords)
+    
+        local scale = 0.5
+        
+        if self:GetParent() == nil then
+          scale = 1
+        end
+    
+        coords.xAxis = coords.xAxis * scale
+        coords.yAxis = coords.yAxis * scale
+        coords.zAxis = coords.zAxis * scale
+        
+        return coords
+    
+    end
+
 
 if Server then 
 
@@ -285,6 +301,16 @@ if Server then
         return true
     end
     
+       
+    function Flag:DetachReset()
+        if self:GetParent() ~= nil then
+            //self:GetParent():DetachAll()   
+            SendEventMessage(self:GetTeam(), kEventMessageTypes.TeamTimeoutGorge)
+            SendEventMessage(GetEnemyTeam(self:GetTeam()), kEventMessageTypes.EnemyTimeoutGorge)                
+            self:GetTeam():ResetRespawnFlag()                
+        end 
+        self.droppedTime = kFlagFloorTimeout
+    end
 
     /**
      * We need to check when there are entities within the trigger area often.

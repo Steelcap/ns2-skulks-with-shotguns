@@ -11,6 +11,7 @@ local kAnimationGraph = PrecacheAsset("models/alien/skulk/skulk_view.animation_g
 
 Shotgun.kActivity = enum { 'None', 'Primary' }
 
+
 kShotgunHUDSlot = 2
 
 local kBulletSize = 0.016
@@ -44,7 +45,7 @@ local kSpreadVectors =
 }
 
 local kMuzzleEffect = PrecacheAsset("cinematics/marine/shotgun/muzzle_flash.cinematic")
-local kMuzzleAttachPoint = "Bone_Tongue"
+local kMuzzleAttachPoint = "Tongue01"
 
 local networkVars =
 {
@@ -57,6 +58,8 @@ function Shotgun:OnCreate()
     Ability.OnCreate(self)
     
     self.activity = Shotgun.kActivity.None
+    --InitMixin(self, PointGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
     
     InitMixin(self, LeapMixin)
     InitMixin(self, BulletsMixin)
@@ -233,7 +236,7 @@ function Shotgun:PerformShotgunFire(player)
         
     end
     
-    TEST_EVENT("Shotgun primary attack")
+    --TEST_EVENT("Shotgun primary attack")
 end
 
 function Shotgun:PerformPrimaryAttack(player)

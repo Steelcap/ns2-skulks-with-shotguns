@@ -24,6 +24,7 @@ local kHealthFontName = "fonts/Stamp_large.fnt"
 local kArmorFontName = "fonts/Stamp_medium.fnt"
 local kAbilityNumFontName = "fonts/Kartika_small.fnt"
 local kHealthArmorIconSize = 16
+local biomass = 1
 
 local kAdrenalineEnergyColor = Color(1, 121/255, 12/255, 1)
 
